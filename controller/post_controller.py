@@ -160,5 +160,33 @@ class PostController:
             raise HTTPException(404, "게시글을 찾을 수 없습니다.")
     
         return {"message": "조회수가 증가했습니다."}
+    
+    ## 게시글 삭제
+    @staticmethod
+    def delete_post(post_id: int, user_id: int):
+    
+        from model.post import post_model
+    
+        # 게시글 찾기
+        post = post_model.find_by_id(post_id)
+        if not post:
+            raise HTTPException(404, "게시글을 찾을 수 없습니다.")
+    
+        # 작성자 확인
+        if post['user_id'] != user_id:
+            raise HTTPException(403, "삭제 권한이 없습니다.")
+    
+        # 삭제
+        success = post_model.delete(post_id)
+        if not success:
+            raise HTTPException(500, "게시글 삭제에 실패했습니다.")
+    
+        # 해당 게시글의 댓글도 함께 삭제 (선택사항)
+        from model.comment import comment_model
+        comments = comment_model.find_by_post_id(post_id)
+        for comment in comments:
+            comment_model.delete(comment['id'])
+
+        return {"message": "게시글이 삭제되었습니다."}
 
 post_controller = PostController()
